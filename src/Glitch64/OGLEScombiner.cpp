@@ -334,11 +334,13 @@ void init_combiner()
 
   char s[128];
   // ZIGGY convert a 565 texture into depth component
-  sprintf(s, "gl_FragDepth = dot(texture2D(texture0, vec2(gl_TexCoord[0])), vec4(31*64*32, 63*32, 31, 0))*%g + %g; \n", zscale/2/65535.0, 1-zscale/2);
-  fragment_shader = (char*)malloc(strlen(fragment_shader_header)+
-    strlen(s)+
-    strlen(fragment_shader_end)+1);
+  sprintf(s, "WRITE_FRAG_DEPTH(dot(texture2D(texture0, vec2(gl_TexCoord[0])), vec4(31*64*32, 63*32, 31, 0))*%g + %g); \n", zscale/2/65535.0, 1-zscale/2);
+  fragment_shader = (char*)malloc(strlen(fragment_shader_header) +
+                                  strlen(kFragDepthPreamble) +
+                                  strlen(s) +
+                                  strlen(fragment_shader_end) + 1);
   strcpy(fragment_shader, fragment_shader_header);
+  strcat(fragment_shader, kFragDepthPreamble);
   strcat(fragment_shader, s);
   strcat(fragment_shader, fragment_shader_end);
   glShaderSource(fragment_depth_shader_object, 1, (const GLchar**)&fragment_shader, NULL);
@@ -351,10 +353,12 @@ void init_combiner()
   // default shader
   fragment_shader_object = glCreateShader(GL_FRAGMENT_SHADER);
 
-  fragment_shader = (char*)malloc(strlen(fragment_shader_header)+
-    strlen(fragment_shader_default)+
-    strlen(fragment_shader_end)+1);
+  fragment_shader = (char*)malloc(strlen(fragment_shader_header) +
+    strlen(kFragDepthPreamble) +
+    strlen(fragment_shader_default) +
+    strlen(fragment_shader_end) + 1);
   strcpy(fragment_shader, fragment_shader_header);
+  strcat(fragment_shader, kFragDepthPreamble);
   strcat(fragment_shader, fragment_shader_default);
   strcat(fragment_shader, fragment_shader_end);
   glShaderSource(fragment_shader_object, 1, (const GLchar**)&fragment_shader, NULL);
@@ -621,9 +625,10 @@ void compile_shader()
     compile_chroma_shader();
   }
 
-  fragment_shader = (char*)malloc(4096);
+  fragment_shader = (char*)malloc(4096 + strlen(kFragDepthPreamble));
 
   strcpy(fragment_shader, fragment_shader_header);
+  strcat(fragment_shader, kFragDepthPreamble);
   if(dither_enabled) strcat(fragment_shader, fragment_shader_dither);
   switch (blackandwhite0) {
     case 1: strcat(fragment_shader, fragment_shader_readtex0bw); break;
